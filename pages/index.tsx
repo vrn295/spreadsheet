@@ -1,11 +1,62 @@
-import Head from 'next/head'
-import Image from 'next/image'
-import { Inter } from '@next/font/google'
-import styles from '../styles/Home.module.css'
-
-const inter = Inter({ subsets: ['latin'] })
+import axios from "axios";
+import Head from "next/head";
+import { useEffect, useState } from "react";
+import { Cell } from "../src/components/Cell/Cell";
+import { Row } from "../src/components/Row/Row";
+import { mockData } from "../src/config";
+import styles from "../styles/Home.module.scss";
 
 export default function Home() {
+  const [currentColor, setcurrentColor] = useState("");
+  const [colorData, setcolorData] = useState<any[]>([]);
+  const [selectedCell, setselectedCell] = useState("");
+
+  const [multipleCell, setmultipleCell] = useState<string[]>([]);
+
+  const [mergedCells, setmergedCells] = useState<string[]>([]);
+  const [biggerCell, setbiggerCell] = useState<string[]>([]);
+
+  const handleColorChange = (e: any) => {
+    setcurrentColor(e.target.value);
+  };
+
+  const resetState = () => {
+    setcurrentColor("");
+  };
+
+  useEffect(() => {
+    if (currentColor && selectedCell) {
+      const leftColorData = colorData.filter(
+        (item: any) => selectedCell !== item.id
+      );
+      setcolorData(() => [
+        ...leftColorData,
+        {
+          id: selectedCell,
+          color: currentColor,
+        },
+      ]);
+    }
+  }, [currentColor]);
+
+  const handleCellClick = (id: string | number, key: string, e: any) => {
+    e.stopPropagation();
+    if (e.ctrlKey || e.metaKey) {
+      setmultipleCell((prev) => [...prev, `${id}-${key}`]);
+    } else {
+      setselectedCell(`${id}-${key}`);
+      setmultipleCell([]);
+    }
+  };
+
+  const handleMergeCell = () => {
+    setmergedCells((prev) => [...prev, multipleCell[1]]);
+    setbiggerCell((prev) => [...prev, multipleCell[0]]);
+  };
+
+  console.log("multipleCell", multipleCell);
+  console.log("mergedCells", mergedCells);
+
   return (
     <>
       <Head>
@@ -14,110 +65,41 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
+      {/* <header>
+        <Row>
+          {Object.entries(mockData[0]).map(
+            ([key]) => key !== "id" && <Cell data={key.toUpperCase()} id={}  />
+          )}
+        </Row>
+      </header> */}
       <main className={styles.main}>
-        <div className={styles.description}>
-          <p>
-            Get started by editing&nbsp;
-            <code className={styles.code}>pages/index.tsx</code>
-          </p>
-          <div>
-            <a
-              href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              By{' '}
-              <Image
-                src="/vercel.svg"
-                alt="Vercel Logo"
-                className={styles.vercelLogo}
-                width={100}
-                height={24}
-                priority
-              />
-            </a>
-          </div>
-        </div>
-
-        <div className={styles.center}>
-          <Image
-            className={styles.logo}
-            src="/next.svg"
-            alt="Next.js Logo"
-            width={180}
-            height={37}
-            priority
-          />
-          <div className={styles.thirteen}>
-            <Image
-              src="/thirteen.svg"
-              alt="13"
-              width={40}
-              height={31}
-              priority
-            />
-          </div>
-        </div>
-
-        <div className={styles.grid}>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Docs <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Find in-depth information about Next.js features and&nbsp;API.
-            </p>
-          </a>
-
-          <a
-            href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Learn <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Learn about Next.js in an interactive course with&nbsp;quizzes!
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Templates <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Discover and deploy boilerplate example Next.js&nbsp;projects.
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Deploy <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Instantly deploy your Next.js site to a shareable URL
-              with&nbsp;Vercel.
-            </p>
-          </a>
-        </div>
+        {mockData.map((item) => (
+          <Row key={item.id}>
+            {Object.entries(item).map(
+              ([key, value], index) =>
+                key !== "id" &&
+                !mergedCells.includes(`${item.id}-${key}`) && (
+                  <Cell
+                    data={value}
+                    valueBy={key}
+                    id={item.id}
+                    key={index}
+                    handleCellClick={handleCellClick}
+                    resetState={resetState}
+                    colorData={colorData}
+                    isBiggerCell={biggerCell.includes(`${item.id}-${key}`)}
+                  />
+                )
+            )}
+          </Row>
+        ))}
       </main>
+
+      <aside>
+        <input type="color" onChange={handleColorChange} />
+      </aside>
+
+      <button onClick={handleMergeCell}>MERGE</button>
     </>
-  )
+  );
 }
